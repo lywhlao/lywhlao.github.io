@@ -1,0 +1,22 @@
+
+- linux上会遇到读取文件的需求，可以用一以下脚本实现
+
+```shell
+#!/bin/sh
+
+#文件的路径
+File=$1  
+if [ -f $File ]; then
+ cat $File | while read line
+ do
+  echo $line #打印每一行的内容
+ done
+else
+ echo "File $File not exist."
+fi
+
+```
+保存为read_file.sh文件 
+
+-  通过sh read_file.sh 文件名  执行该脚本
+
