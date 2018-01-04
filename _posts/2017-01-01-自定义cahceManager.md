@@ -1,4 +1,6 @@
-##自定义cacheManager
+---
+自定义cacheManager
+---
 ####1.背景
 - spring框架提供了多种cacheManager，例如guavaCacheManager，ehcacheCacheManager，RedisCacheManager等，通过这种方式我们可以很方便的集成这些第三方的cache，并且通过@Cacheable,@CachePut等注解使用。
 - 那么如何把这些第三方缓存联合起来，做一个多级缓存。例如一般是使用本地缓存+redis缓存的方式，如何封装一个中间价，对上层应用使用透明，那么可以较大地提升开发效率。如下图所示
