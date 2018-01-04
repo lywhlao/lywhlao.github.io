@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Guava本地缓存托底缓存以及异步更新缓存 | 大劳的blog</title>
+<meta property="og:title" content="Guava本地缓存托底缓存以及异步更新缓存" />
+<meta name="author" content="lywhlao" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="####1.简介 1.1 guava本地缓存是开发中比较常用的组件，一般使用 LoadingCache，将需要的值加载在内存中，如下所示" />
+<meta property="og:description" content="####1.简介 1.1 guava本地缓存是开发中比较常用的组件，一般使用 LoadingCache，将需要的值加载在内存中，如下所示" />
+<link rel="canonical" href="http://localhost:4000/tec/2017/01/01/guava%E6%89%98%E5%BA%95%E7%BC%93%E5%AD%98%E4%BB%A5%E5%8F%8A%E5%BC%82%E6%AD%A5%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98.html" />
+<meta property="og:url" content="http://localhost:4000/tec/2017/01/01/guava%E6%89%98%E5%BA%95%E7%BC%93%E5%AD%98%E4%BB%A5%E5%8F%8A%E5%BC%82%E6%AD%A5%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98.html" />
+<meta property="og:site_name" content="大劳的blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2017-01-01T00:00:00+08:00" />
+<script type="application/ld+json">
+{"name":null,"description":"####1.简介 1.1 guava本地缓存是开发中比较常用的组件，一般使用 LoadingCache，将需要的值加载在内存中，如下所示","author":{"@type":"Person","name":"lywhlao"},"@type":"BlogPosting","url":"http://localhost:4000/tec/2017/01/01/guava%E6%89%98%E5%BA%95%E7%BC%93%E5%AD%98%E4%BB%A5%E5%8F%8A%E5%BC%82%E6%AD%A5%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98.html","publisher":null,"image":null,"headline":"Guava本地缓存托底缓存以及异步更新缓存","dateModified":"2017-01-01T00:00:00+08:00","datePublished":"2017-01-01T00:00:00+08:00","sameAs":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/tec/2017/01/01/guava%E6%89%98%E5%BA%95%E7%BC%93%E5%AD%98%E4%BB%A5%E5%8F%8A%E5%BC%82%E6%AD%A5%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98.html"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="alternate" type="application/rss+xml" title="大劳的blog" href="/feed.xml">
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">大劳的blog</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/History.html">HEAD</a>
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Guava本地缓存托底缓存以及异步更新缓存</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2017-01-01T00:00:00+08:00" itemprop="datePublished">
+        
+        Jan 1, 2017
+      </time>
+      
+        • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">lywhlao</span></span>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>####1.简介</p>
+<ul>
+  <li>1.1 guava本地缓存是开发中比较常用的组件，一般使用 LoadingCache，将需要的值加载在内存中，如下所示</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="n">LoadingCache</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">cacheLoader</span><span class="o">=</span> <span class="n">CacheBuilder</span>
+                <span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                <span class="o">.</span><span class="na">expireAfterWrite</span><span class="o">(</span><span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MINUTES</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="k">new</span> <span class="n">CacheLoader</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">T</span><span class="o">&gt;()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="n">T</span> <span class="nf">load</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                       
+                        <span class="k">return</span> <span class="nf">method</span><span class="o">(</span><span class="n">key</span><span class="o">);</span><span class="c1">//1.执行method,获取key对应的值</span>
+                    <span class="o">}</span>
+                <span class="o">});</span> 
+</code></pre></div></div>
+
+<p>使用的方法:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  T value=cacheLoader.get(key);//获取key对应的值
+</code></pre></div></div>
+
+<h4 id="2托底缓存设置">2.托底缓存设置</h4>
+<ul>
+  <li>如果mehod()执行出错的话，无法拿到新的缓存。有时候，我们希望如果method执行异常的时候，本地缓存依旧用过期的缓存，那么可以重写CacheLoader中的reload方法进行设置</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">RefreshKeepCacheLoader</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">CacheLoader</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">ListenableFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">reload</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">oldValue</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">Object</span> <span class="n">newvalue</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">newvalue</span> <span class="o">=</span> <span class="k">this</span><span class="o">.</span><span class="na">load</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        
+        <span class="o">}</span>
+
+        <span class="k">if</span><span class="o">(</span><span class="n">newvalue</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">newvalue</span> <span class="o">=</span> <span class="n">oldValue</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">Futures</span><span class="o">.</span><span class="na">immediateFuture</span><span class="o">(</span><span class="n">newvalue</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></div></div>
+<p>那么此时我们的cacheLoader可以这么写：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="n">LoadingCache</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">cacheLoader</span><span class="o">=</span> <span class="n">CacheBuilder</span>
+                <span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                <span class="o">.</span><span class="na">expireAfterWrite</span><span class="o">(</span><span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MINUTES</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="k">new</span> <span class="n">RefreshKeepCacheLoader</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">T</span><span class="o">&gt;()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="n">T</span> <span class="nf">load</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                       
+                        <span class="k">return</span> <span class="nf">method</span><span class="o">(</span><span class="n">key</span><span class="o">);</span><span class="c1">//2.执行method,获取key对应的值</span>
+                    <span class="o">}</span>
+                <span class="o">});</span> 
+</code></pre></div></div>
+<p>与上面不同的是，用自定义的RefreshKeepCacheLoader替换了CacheLoader类，由于缓存过期会执行reload方法，如果reload异常，就采用oldValue。</p>
+
+<h4 id="3异步缓存设置">3.异步缓存设置</h4>
+<ul>
+  <li>3.1在并发条件下，有N个线程，如果缓存失效了，会有一个线程A去执行load方法（参见官方说明文档<em>If another call to get(K) or getUnchecked(K) is currently loading the value for key, simply waits for that thread to finish and returns its loaded value.</em>）,而其他线程就会等待线程A得到的结果，这样就会影响性能。</li>
+  <li>3.2 我们可以使全部线程返回旧的缓存值，把去异步更新缓存。方法如下： 
+首先我们看下，默认的reload的方法是怎么写的:</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="kd">public</span> <span class="n">ListenableFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">reload</span><span class="o">(</span><span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="n">V</span> <span class="n">oldValue</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">checkNotNull</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+    <span class="n">checkNotNull</span><span class="o">(</span><span class="n">oldValue</span><span class="o">);</span>
+    <span class="k">return</span> <span class="n">Futures</span><span class="o">.</span><span class="na">immediateFuture</span><span class="o">(</span><span class="n">load</span><span class="o">(</span><span class="n">key</span><span class="o">));</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+<p>其实通过方法名，就可以看出执行load方法，然后用Futures.immediateFuture封装成ListenableFuture，再来看下immediateFuture方法</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="cm">/**
+   * Creates a {@code ListenableFuture} which has its value set immediately upon construction. The
+   * getters just return the value. This {@code Future} can't be canceled or timed out and its
+   * {@code isDone()} method always returns {@code true}.
+   */</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">ListenableFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">immediateFuture</span><span class="o">(</span><span class="nd">@Nullable</span> <span class="n">V</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">// This cast is safe because null is assignable to V for all V (i.e. it is covariant)</span>
+      <span class="nd">@SuppressWarnings</span><span class="o">({</span><span class="s">"unchecked"</span><span class="o">,</span> <span class="s">"rawtypes"</span><span class="o">})</span>
+      <span class="n">ListenableFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">typedNull</span> <span class="o">=</span> <span class="o">(</span><span class="n">ListenableFuture</span><span class="o">)</span> <span class="n">ImmediateSuccessfulFuture</span><span class="o">.</span><span class="na">NULL</span><span class="o">;</span>
+      <span class="k">return</span> <span class="n">typedNull</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="n">ImmediateSuccessfulFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;(</span><span class="n">value</span><span class="o">);</span>
+  <span class="o">}</span>
+
+</code></pre></div></div>
+<p>这就比较清楚了，这个future中直接设置的是值。
+那么我们现在就要重写这个reload方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="kd">public</span> <span class="kd">abstract</span>  <span class="kd">class</span> <span class="nc">RefreshAsyncCacheLoader</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">CacheLoader</span><span class="o">&lt;</span><span class="n">K</span><span class="o">,</span> <span class="n">V</span><span class="o">&gt;</span> <span class="o">{</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">ListenableFuture</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">reload</span><span class="o">(</span><span class="kd">final</span> <span class="n">K</span> <span class="n">key</span><span class="o">,</span> <span class="kd">final</span> <span class="n">V</span> <span class="n">oldValue</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">ListenableFutureTask</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="n">task</span> <span class="o">=</span> <span class="n">ListenableFutureTask</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="k">new</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;()</span> <span class="o">{</span>
+            <span class="kd">public</span> <span class="n">V</span> <span class="nf">call</span><span class="o">()</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="k">return</span> <span class="nf">load</span><span class="o">((</span><span class="n">K</span><span class="o">)</span> <span class="n">key</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="n">oldValue</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">});</span>
+        <span class="n">ThreadPoolUtil</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">execute</span><span class="o">(</span><span class="n">task</span><span class="o">);</span><span class="c1">//这里将这个task放到自定义的线程池中去执行，返回一个futrue，可以通过future获取线程执行获取的值</span>
+        <span class="k">return</span> <span class="n">task</span><span class="o">;</span>
+    <span class="o">}</span>
+
+<span class="o">}</span>
+
+</code></pre></div></div>
+
+<h4 id="4总结">4.总结</h4>
+<ul>
+  <li>最终我们可以得到具有托底缓存设置，并且可以异步更新缓存的guavaCache</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="n">LoadingCache</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">cacheLoader</span><span class="o">=</span> <span class="n">CacheBuilder</span>
+                <span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                <span class="o">.</span><span class="na">expireAfterWrite</span><span class="o">(</span><span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MINUTES</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="k">new</span> <span class="n">RefreshAsyncCacheLoader</span> <span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">T</span><span class="o">&gt;()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="n">T</span> <span class="nf">load</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                       
+                        <span class="k">return</span> <span class="nf">method</span><span class="o">(</span><span class="n">key</span><span class="o">);</span><span class="c1">//1.执行method,获取key对应的值</span>
+                    <span class="o">}</span>
+                <span class="o">});</span> 
+
+</code></pre></div></div>
+
+<h4 id="5实验">5.实验</h4>
+<p>下面我们做一个简单的实验，涉及到WebController，CacheTest这两个类。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">netease</span><span class="o">.</span><span class="na">mail</span><span class="o">.</span><span class="na">activity</span><span class="o">.</span><span class="na">web</span><span class="o">.</span><span class="na">controller</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">com.netease.mail.activity.constant.RetCode</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.activity.meta.RequestHolder</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.activity.meta.vo.common.AjaxResult</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.activity.service.CacheTest</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.rambo.log.StatLogger</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.rambo.log.StatLoggerFactory</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.slf4j.Logger</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.slf4j.LoggerFactory</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.stereotype.Controller</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.web.bind.annotation.RequestMapping</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.web.bind.annotation.RequestMethod</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.web.bind.annotation.ResponseBody</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">javax.servlet.http.HttpServletRequest</span><span class="o">;</span>
+
+<span class="cm">/**
+ * 重构web-control
+ * Created by hzlaojiaqi on 2016/9/19.
+ */</span>
+<span class="nd">@Controller</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">WebController</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Logger</span> <span class="n">INTERACTIVE_LOG</span> <span class="o">=</span> <span class="n">LoggerFactory</span><span class="o">.</span><span class="na">getLogger</span><span class="o">(</span><span class="s">"INTERACTIVE_LOGGER"</span><span class="o">);</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">StatLogger</span> <span class="n">USER_TRACE_LOG</span> <span class="o">=</span> <span class="n">StatLoggerFactory</span><span class="o">.</span><span class="na">getLogger</span><span class="o">(</span><span class="s">"emptyProject"</span><span class="o">);</span>
+
+    <span class="nd">@Autowired</span>
+    <span class="n">RequestHolder</span> <span class="n">mRequestHolder</span><span class="o">;</span>
+
+
+    <span class="nd">@Autowired</span>
+    <span class="n">CacheTest</span> <span class="n">cacheTest</span><span class="o">;</span>
+
+    <span class="cm">/**
+     * 获取当前uid的信息
+     * @param httpServletRequest
+     * @return
+     */</span>
+    <span class="nd">@RequestMapping</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">"/ajax/getActInfo.do"</span><span class="o">,</span><span class="n">method</span> <span class="o">=</span> <span class="n">RequestMethod</span><span class="o">.</span><span class="na">GET</span><span class="o">)</span>
+    <span class="nd">@ResponseBody</span>
+    <span class="kd">public</span> <span class="n">AjaxResult</span> <span class="nf">getActInfo2</span><span class="o">(</span><span class="n">HttpServletRequest</span> <span class="n">httpServletRequest</span><span class="o">){</span>
+        <span class="n">String</span> <span class="n">uid</span> <span class="o">=</span> <span class="n">mRequestHolder</span><span class="o">.</span><span class="na">getUid</span><span class="o">();</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nf">AjaxResult</span><span class="o">(</span><span class="n">RetCode</span><span class="o">.</span><span class="na">SUCCESS</span><span class="o">,</span><span class="n">cacheTest</span><span class="o">.</span><span class="na">cacheGet</span><span class="o">(</span><span class="n">uid</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></div></div>
+<ul>
+  <li>在看下CacheTest这个service</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">netease</span><span class="o">.</span><span class="na">mail</span><span class="o">.</span><span class="na">activity</span><span class="o">.</span><span class="na">service</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">com.netease.mail.activity.cache.RedisConfigure</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.activity.web.controller.BaseAjaxController</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">com.netease.mail.util.common.TimeUtil</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">net.sf.ehcache.Cache</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">net.sf.ehcache.CacheManager</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">net.sf.ehcache.Element</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.cache.annotation.CachePut</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.cache.annotation.Cacheable</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.springframework.stereotype.Service</span><span class="o">;</span>
+
+<span class="cm">/**
+ * Created by hzlaojiaqi on 2017/11/9.
+ */</span>
+<span class="nd">@Service</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CacheTest</span> <span class="kd">extends</span> <span class="n">BaseService</span><span class="o">{</span>
+
+    <span class="nd">@Cacheable</span><span class="o">(</span><span class="n">cacheManager</span> <span class="o">=</span> <span class="s">"activityCacheManager"</span><span class="o">,</span><span class="n">key</span> <span class="o">=</span> <span class="s">"'actCache_'+#uid"</span><span class="o">,</span><span class="n">cacheNames</span> <span class="o">=</span> <span class="s">"actCache"</span><span class="o">,</span><span class="n">unless</span> <span class="o">=</span> <span class="s">"#result==null"</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">cacheGet</span><span class="o">(</span><span class="n">String</span> <span class="n">uid</span><span class="o">){</span>
+        <span class="n">String</span> <span class="n">s</span> <span class="o">=</span> <span class="n">uid</span> <span class="o">+</span> <span class="s">"_"</span> <span class="o">+</span> <span class="n">TimeUtil</span><span class="o">.</span><span class="na">now</span><span class="o">();</span>
+        <span class="n">THIRDPARTY_LOG</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"cacheGet in method uid:{} s:{}"</span><span class="o">,</span><span class="n">uid</span><span class="o">,</span><span class="n">s</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+<ul>
+  <li>这里设置缓存的时间比较短，只有10s钟，具体的设置如下：</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">LoadingCache</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">Object</span><span class="o">&gt;</span> <span class="n">cache</span> <span class="o">=</span> <span class="n">CacheBuilder</span>
+            <span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">maximumSize</span><span class="o">(</span><span class="mi">5210</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">refreshAfterWrite</span><span class="o">(</span><span class="mi">10</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">build</span><span class="o">(</span><span class="k">new</span> <span class="n">RefreshAsyncCacheLoader</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;()</span> <span class="o">{</span>
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="n">Object</span> <span class="nf">load</span><span class="o">(</span><span class="n">String</span> <span class="n">key</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+                    <span class="n">Object</span> <span class="n">o</span> <span class="o">=</span> <span class="n">mRedis</span><span class="o">.</span><span class="na">opsForValue</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+                    <span class="n">THIRDPARTY_LOG</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"thread:{},activityManager local cache reload key:{},result:{}"</span><span class="o">,</span><span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">(),</span><span class="n">key</span><span class="o">,</span><span class="n">o</span><span class="o">);</span>
+                    <span class="k">return</span> <span class="n">o</span><span class="o">;</span>
+                <span class="o">}</span>
+            <span class="o">});</span>
+</code></pre></div></div>
+<ul>
+  <li>最终可以看到的log为
+<img src="https://ws3.sinaimg.cn/large/006tKfTcgy1fm543g9bq1j30yi08442r.jpg" alt="" /></li>
+  <li>请求线程为http-apr-8080-exec-8，该线程马上返回了原来的值，而我们自定义的线程custom_thread_member_11则执行了reload方法。（这里加载后的值和之前的值是一样的，特此说明）</li>
+  <li>如果是第一次请求，由于没有旧的值，那么http-apr-8080-exec-8会去执行reload方法。</li>
+</ul>
+
+<p>Ps：文章难免有纰漏，望拍砖指正，感谢。</p>
+
+<h5 id="5参考资料">5.参考资料</h5>
+<ul>
+  <li>guvaCache官方文档<a href="">https://github.com/google/guava/wiki/CachesExplained</a></li>
+  <li>并发编程网 <a href="">http://ifeve.com/google-guava-cachesexplained/</a></li>
+</ul>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/tec/2017/01/01/guava%E6%89%98%E5%BA%95%E7%BC%93%E5%AD%98%E4%BB%A5%E5%8F%8A%E5%BC%82%E6%AD%A5%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">大劳的blog</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              lywlhao
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:lywhlao@163.com">lywhlao@163.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a class="u-url" rel="me" href="https://github.com/lywhlao"><span class="icon icon--github"><svg viewBox="0 0 16 16" width="16px" height="16px"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">lywhlao</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>记录工作中的点滴感悟。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
