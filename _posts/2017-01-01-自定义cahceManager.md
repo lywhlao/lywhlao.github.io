@@ -1,5 +1,8 @@
 ---
-自定义cacheManager
+layout: post
+title: "自定义CacheManager"
+categories: tec
+author: "lywhlao"
 ---
 ####1.背景
 - spring框架提供了多种cacheManager，例如guavaCacheManager，ehcacheCacheManager，RedisCacheManager等，通过这种方式我们可以很方便的集成这些第三方的cache，并且通过@Cacheable,@CachePut等注解使用。
