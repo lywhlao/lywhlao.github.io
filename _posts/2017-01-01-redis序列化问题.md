@@ -1,0 +1,23 @@
+###JackSon反序列化报错,Unrecognized field, not marked as ignorable
+
+####1.报错的情景
+
+字段|JavaBean | redis| 是否报错
+-------|-------|--------------|------------|
+包含字段|a,b | a | 否 |
+包含字段|a | a,b | 是|
+
+####2.解决办法
+- 2.1对于JaveBean的类定义上加上注解
+```
+@JsonIgnoreProperties(ignoreUnknown = true)  
+public Class Bean{
+}
+```  
+
+- 2.2设置jackson的序列化配置
+```
+ObjectMapper objectMapper=new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+jackson.setObjectMapper(objectMapper);
+```
